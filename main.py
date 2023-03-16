@@ -4,12 +4,7 @@ import heapq
 
 
 class Worker:
-    """Worker class.
-    The workers are sorted by release time. If the release time is the same for
-    both of them, workers are sorted by their thread_id.
-    """
-
-    def __init__(self, thread_id, release_time=0):
+        def __init__(self, thread_id, release_time=0):
         self.thread_id = thread_id
         self.release_time = release_time
 
