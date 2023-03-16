@@ -5,7 +5,6 @@ from collections import namedtuple
 
 AssignedJob = namedtuple('AssignedJob', ['worker', 'started_at'])
 
-
 class JobQueue:
     def __init__(self, n_workers, jobs):
         self.n = n_workers
