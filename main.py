@@ -1,61 +1,119 @@
 # python3
 
+import heapq
 
-from collections import namedtuple
 
-AssignedJob = namedtuple('AssignedJob', ['worker', 'started_at'])
+class Worker:
+    """Worker class.
+    The workers are sorted by release time. If the release time is the same for
+    both of them, workers are sorted by their thread_id.
+    """
+
+    def __init__(self, thread_id, release_time=0):
+        self.thread_id = thread_id
+        self.release_time = release_time
+
+    def __lt__(self, other):
+        if self.release_time == other.release_time:
+            return self.thread_id < other.thread_id
+        return self.release_time < other.release_time
+
+    def __gt__(self, other):
+        if self.release_time == other.release_time:
+            return self.thread_id > other.thread_id
+        return self.release_time > other.release_time
+
 
 class JobQueue:
-    def __init__(self, n_workers, jobs):
-        self.n = n_workers
-        self.jobs = jobs
-        self.finish_time = []
-        self.assigned_jobs = []
-        for i in range(self.n):
-            self.finish_time.append([i, 0])
+    """Simulation of a program that processes a list of jobs in parallel.
+    Samples:
+    >>> job_queue = JobQueue()
+    >>> job_queue.num_workers = 2
+    >>> job_queue.jobs = [1, 2, 3, 4, 5]
+    >>> job_queue.assign_jobs()
+    >>> job_queue.write_response()
+    0 0
+    1 0
+    0 1
+    1 2
+    0 4
+    >>> # Explanation:
+    >>> # 1. The two threads try to simultaneously take jobs from the list, so
+    >>> # thread with index 0 actually takes the first job and starts
+    >>> # working on it at the moment 0.
+    >>> # 2. The thread with index 1 takes the second job and starts
+    >>> # working on it also at the moment 0.
+    >>> # 3. After 1 second, thread 0 is done with the first job and takes
+    >>> # the third job from the list, and starts processing it immediately
+    >>> # at time 1.
+    >>> # 4. One second later, thread 1 is done with the second job and takes
+    >>> # the fourth job from the list, and starts processing it immediately
+    >>> # at time 2.
+    >>> # 5. Finally, after 2 more seconds, thread 0 is done with the third job
+    >>> # and takes the fifth job from the list, and starts processing it
+    >>> # immediately at time 4.
+    >>> job_queue = JobQueue()
+    >>> job_queue.num_workers = 4
+    >>> job_queue.jobs = [1] * 20
+    >>> job_queue.assign_jobs()
+    >>> job_queue.write_response()
+    0 0
+    1 0
+    2 0
+    3 0
+    0 1
+    1 1
+    2 1
+    3 1
+    0 2
+    1 2
+    2 2
+    3 2
+    0 3
+    1 3
+    2 3
+    3 3
+    0 4
+    1 4
+    2 4
+    3 4
+    >>> # Explanation: Jobs are taken by 4 threads in packs of 4, processed in
+    >>> # 1 second, and then the next pack comes. This happens 5 times starting
+    >>> # at moments 0, 1, 2, 3 and 4. After that all the 5 × 4 = 20 jobs
+    >>> # are processed.
+    """
 
-    def SiftDown(self, i):
-        min_index = i
-        left = 2 * i + 1
-        right = 2 * i + 2
-        if left < self.n:
-            if self.finish_time[min_index][1] > self.finish_time[left][1]:
-                min_index = left
-            elif self.finish_time[min_index][1] == self.finish_time[left][1]:
-                if self.finish_time[min_index][0] > self.finish_time[left][0]:
-                    min_index = left
-        if right < self.n:
-            if self.finish_time[min_index][1] > self.finish_time[right][1]:
-                min_index = right
-            elif self.finish_time[min_index][1] == self.finish_time[right][1]:
-                if self.finish_time[min_index][0] > self.finish_time[right][0]:
-                    min_index = right
-        if min_index != i:
-            self.finish_time[i], self.finish_time[min_index] = self.finish_time[min_index], self.finish_time[i]
-            self.SiftDown(min_index)
+    def read_data(self):
+        """Reads data from standard input."""
+        self.num_workers, m = map(int, input().split())
+        self.jobs = list(map(int, input().split()))
+        self.size = len(self.jobs)
+        assert m == self.size
 
-    def NextWorker(self, job):
-        root = self.finish_time[0]
-        next_worker = root[0]
-        started_at = root[1]
-        self.assigned_jobs.append(AssignedJob(next_worker,started_at))
-        self.finish_time[0][1] += job
-        self.SiftDown(0)
+    def write_response(self):
+        """Writes the response to standard output."""
+        for worker_id, start_time in self.result:
+            print(worker_id, start_time)
 
+    def assign_jobs(self):
+        """Assigns jobs to corresponding workers"""
+        self.result = []
+        self.worker_queue = [Worker(i) for i in range(self.num_workers)]
 
-def main():
-    n_workers, n_jobs = map(int, input().split())
-    jobs = list(map(int, input().split()))
-    assert len(jobs) == n_jobs
+        for job in self.jobs:
+            worker = heapq.heappop(self.worker_queue)
 
-    job_queue = JobQueue(n_workers, jobs)
-    for job in jobs:
-        job_queue.NextWorker(job)
-    assigned_jobs = job_queue.assigned_jobs
+            self.result.append((worker.thread_id, worker.release_time))
 
-    for job in assigned_jobs:
-        print(job.worker, job.started_at)
+            worker.release_time += job
+            heapq.heappush(self.worker_queue, worker)
+
+    def solve(self):
+        self.read_data()
+        self.assign_jobs()
+        self.write_response()
 
 
 if __name__ == "__main__":
-    main()
+    job_queue = JobQueue()
+    job_queue.solve()
