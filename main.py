@@ -13,7 +13,7 @@ class JobQueue:
         self.finish_time = []
         self.assigned_jobs = []
         for i in range(self.n):
-            self.finish_time.append([i, 0])
+            self.finish_time.append([i, 0]
 
     def SiftDown(self, i):
         min_index = i
